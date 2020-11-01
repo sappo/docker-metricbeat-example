@@ -89,6 +89,12 @@ start-apache:
 stop-apache:
 	@$(compose-apache) stop apache
 
+# =================================================== KAFKA ===========================================================
+compose-kafka=docker-compose -f docker-compose.kafka.yml
+start-kafka:
+	@$(compose-kafka) up -d
+stop-kafka:
+	@$(compose-kafka) stop
 
 start-all: start-apache start-nginx start-redis start-rabbitmq start-mongodb start-mysql
 

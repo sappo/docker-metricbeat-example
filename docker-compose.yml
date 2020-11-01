@@ -4,14 +4,11 @@ services:
   # Used as the Metricbeat output
   # Of course, we could create a cluster with more nodes
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.0.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
     container_name: metricbeat-elasticsearch
-    memswap_limit: 0
-    mem_limit: 2g
-    cap_add:
-      - IPC_LOCK
     environment:
       - cluster.name=docker-cluster
+      - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     ulimits:
@@ -19,19 +16,21 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - ./config/usr/share/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      # - ./config/usr/share/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - data01:/usr/share/elasticsearch/data
     ports:
-      - "9222:9200"
+      - "9200:9200"
+      - "9300:9300"
     networks:
       - metricbeat
 
   # Used to analyse data sent to elasticsearch from Metricbeat.
   # Metricbeat directly creates Dashbords into Kibana
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.0.0
+    image: docker.elastic.co/kibana/kibana:7.9.3
     container_name: metricbeat-kibana
     volumes:
-      - ./config/opt/kibana/config/kibana.yml:/opt/kibana/config/kibana.yml:ro
+      - ./config/opt/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     depends_on:
       - elasticsearch
     ports:
@@ -75,9 +74,11 @@ services:
       - "kibana:172.17.0.1" # The IP of docker0 interface to access host from container
     network_mode: host # Mandatory to monitor HOST filesystem, memory, processes,...
 
+volumes:
+  data01:
+    driver: local
+
 networks:
   metricbeat:
     external:
       name: metricbeat
-
-

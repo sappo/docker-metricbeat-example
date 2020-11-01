@@ -1,0 +1,41 @@
+version: "2.2"
+services:
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: metricbeat-zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - zookeeper
+
+  kafka:
+    # image: wurstmeister/kafka
+    build: ./docker/kafka
+    container_name: metricbeat-kafka
+    ports:
+      - 9092:9092
+      - 8778:8778
+    links:
+    - zookeeper
+    environment:
+      KAFKA_OPTS: -javaagent:/usr/jolokia/agents/jolokia-jvm.jar=host=0.0.0.0
+      KAFKA_HEAP_OPTS: -Xmx1G -Xms1G
+      KAFKA_JVM_PERFORMANCE_OPTS: -server -XX:+UseG1GC -XX:MaxGCPauseMillis=25 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka
+
+networks:
+  zookeeper:
+    external:
+      name: metricbeat
+  kafka:
+    external:
+      name: metricbeat
